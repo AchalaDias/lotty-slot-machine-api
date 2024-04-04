@@ -1,1 +1,1 @@
-# lotty-auth-controller
+# lotty-slot-machine-api
