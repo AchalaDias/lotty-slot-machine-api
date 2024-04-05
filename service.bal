@@ -4,6 +4,7 @@ import ballerinax/mongodb;
 
 configurable string host = ?;
 configurable string database = ?;
+configurable string resultHost = ?;
 const string creditCollection = "credits";
 const string slotMachineRecordsCollection = "slot_machine_records";
 
@@ -20,67 +21,10 @@ service / on new http:Listener(9090) {
         self.Db = check mongoDb->getDatabase(database);
     }
 
-    resource function get slotmachinestats/[string email]() returns SlotMachineReport[]|error {
-        mongodb:Collection smCollection = check self.Db->getCollection(slotMachineRecordsCollection);
-        stream<SlotMachineReport, error?> resultStream = check smCollection->aggregate([
-            {
-                \$group: {
-                    _id: null,
-                    orig: {
-                        \$push: "$$ROOT"
-                    },
-                    "total": {
-                        \$sum: "$amount"
-                    }
-                }
-            },
-            {
-                \$unwind: "$orig"
-            },
-            {
-                \$project: {
-                    date: "$orig.date",
-                    amount: "$orig.amount",
-                    email: "$orig.email",
-                    total: "$total"
-                }
-            },
-            {
-                \$match: {email: email}
-            },
-            {
-                \$group: {
-                    _id: "$date",
-                    amount: {
-                        \$sum: "$amount"
-                    },
-                    orig: {
-                        \$push: "$$ROOT.total"
-                    }
-                }
-            },
-            {
-                "$unwind": "$orig"
-            },
-            {
-                \$group: {
-                    _id: {
-                        _id: "$_id",
-                        amount: "$amount"
-                    }
-                }
-            },
-            {
-                \$project: {
-                    date: "$_id._id",
-                    "amount": "$_id.amount",
-                    _id: 0
-                }
-            }
-        ]);
-
-        return from SlotMachineReport slms in resultStream
-            select slms;
+    resource function get getresults/[string email]() returns json|error {
+        http:Client albumClient = check new(resultHost);
+        http:Response response = check albumClient->get("/slotmachineresults/" + email);
+        return response.getJsonPayload();
     }
 
     resource function get credits/[string email]() returns Credit|error {
@@ -151,7 +95,3 @@ public type SlotMachineRecord record {|
     *SlotMachineRecordInput;
 |};
 
-public type SlotMachineReport record {|
-    int amount;
-    string date;
-|};
