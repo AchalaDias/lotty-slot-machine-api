@@ -1,0 +1,10 @@
+apiVersion: core.choreo.dev/v1beta1
+kind: ComponentConfig
+spec:
+outbound:
+  serviceReferences:
+  - name: choreo:///achalatd/lottyapis/cqyviv/1dace/v1.0/PROJECT
+    connectionConfig: 01eef509-01df-1828-aef5-c0d2497a693c
+    env:
+    - from: ServiceURL
+      to: http://lotteryresultapi-2893802193:9092
