@@ -1,6 +1,12 @@
 apiVersion: core.choreo.dev/v1beta1
 kind: ComponentConfig
 spec:
+  inbound:
+    - name: lotty-slot-machine-api
+      port: 9090
+      type: REST
+      networkVisibility: Public
+      schemaFilePath: service_openapi.yaml
 outbound:
   serviceReferences:
   - name: choreo:///achalatd/lottyapis/cqyviv/1dace/v1.0/PROJECT
