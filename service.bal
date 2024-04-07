@@ -1,14 +1,10 @@
 import ballerina/http;
 import ballerina/uuid;
 import ballerinax/mongodb;
-import ballerina/os;
-import ballerina/io;
-
-final string ServiceURL = os:getEnv("ServiceURL");
 
 configurable string host = ?;
 configurable string database = ?;
-configurable string resultHost = ServiceURL;
+configurable string resultHost = ?;
 const string creditCollection = "credits";
 const string slotMachineRecordsCollection = "slot_machine_records";
 
@@ -26,7 +22,6 @@ service / on new http:Listener(9090) {
     }
 
     resource function get getresults/[string email]() returns json|error {
-        io:println(" ########## ServiceURL ############# : ", ServiceURL);
         http:Client albumClient = check new(resultHost);
         http:Response response = check albumClient->get("/slotmachineresults/" + email);
         return response.getJsonPayload();
