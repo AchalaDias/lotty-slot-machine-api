@@ -1,10 +1,16 @@
 import ballerina/http;
+import ballerina/oauth2;
 import ballerina/uuid;
 import ballerinax/mongodb;
 
 configurable string host = ?;
 configurable string database = ?;
 configurable string resultHost = ?;
+configurable string tokenUrl = ?;
+configurable string clientId = ?;
+configurable string clientSecret = ?;
+
+
 const string creditCollection = "credits";
 const string slotMachineRecordsCollection = "slot_machine_records";
 
@@ -22,8 +28,16 @@ service / on new http:Listener(9090) {
     }
 
     resource function get getresults/[string email]() returns json|error {
-        http:Client albumClient = check new(resultHost);
-        http:Response response = check albumClient->get("/slotmachineresults/" + email);
+
+        oauth2:ClientOAuth2Provider provider = new ({
+            tokenUrl: tokenUrl,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            scopes: []
+        });
+        string token = "Bearer " + check provider.generateToken();
+        http:Client apiClient = check new (resultHost);
+        http:Response response = check apiClient->get("/slotmachineresults/" + email, {"Authorization": token});
         return response.getJsonPayload();
     }
 
