@@ -10,7 +10,6 @@ configurable string tokenUrl = ?;
 configurable string clientId = ?;
 configurable string clientSecret = ?;
 
-
 const string creditCollection = "credits";
 const string slotMachineRecordsCollection = "slot_machine_records";
 
@@ -28,7 +27,6 @@ service / on new http:Listener(9090) {
     }
 
     resource function get getresults/[string email]() returns json|error {
-
         oauth2:ClientOAuth2Provider provider = new ({
             tokenUrl: tokenUrl,
             clientId: clientId,

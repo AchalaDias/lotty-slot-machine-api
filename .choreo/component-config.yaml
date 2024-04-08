@@ -7,11 +7,8 @@ spec:
       type: REST
       networkVisibility: Public
       schemaFilePath: service_openapi.yaml
-  outbound:
-    serviceReferences:
-    - name: choreo:///achalatd/lottyapis/cqyviv/1dace/v1.0/PROJECT
-      connectionConfig: 01eef509-01df-1828-aef5-c0d2497a693c
-      env:
-      - from: ServiceURL
-        to: http://lotteryresultapi-2893802193:9092
+  # outbound:
+  #   serviceReferences:
+  #   - name: choreo:///achalatd/lottyfrontline/zgclcv/9f757/v1.0/ORGANIZATION
+  #     connectionConfig: 01eef5b9-930e-1326-896d-6421568b0e09
 
