@@ -1,4 +1,5 @@
 import ballerina/http;
+import ballerina/io;
 // import ballerina/io;
 import ballerina/oauth2;
 import ballerina/sql;
@@ -57,17 +58,19 @@ service / on new http:Listener(9090) {
     resource function put credits/[string email](CreditUpdate update) returns Credit|error {
         mongodb:Collection creditCol = check self.Db->getCollection(creditCollection);
         Credit currentCredit = check getCredit(self.Db, email);
+        io:println(currentCredit);
         int balance = currentCredit.amount + update.deduction;
         if balance <= 0 {
             balance = 0;
         }
-
+        io:println(balance);
         if dbType == "mysql" {
             mysql:Client mysqlDb = check getMysqlConnection();
             sql:ParameterizedQuery query = `UPDATE Credits
                                         SET amount = ${balance}
-                                        WHERE email = ${email};`;
+                                        WHERE email = ${email}`;
             sql:ExecutionResult result = check mysqlDb->execute(query);
+            io:println(result.affectedRowCount);
         } else {
             mongodb:UpdateResult updateResult = check creditCol->updateOne({email}, {set: {amount: balance}});
             if updateResult.modifiedCount != 1 {
@@ -75,7 +78,8 @@ service / on new http:Listener(9090) {
             }
         }
         SlotMachineRecord sm = check addSlotMachineRecord(self.Db, email, update.deduction, update.date);
-        return getCredit(self.Db, email);
+        currentCredit.amount = balance;
+        return currentCredit;
     }
 }
 
@@ -92,7 +96,9 @@ isolated function getCredit(mongodb:Database Db, string email) returns Credit|er
             sql:ParameterizedQuery query = `INSERT INTO Credits(amount, email)
                                   VALUES (${cr.amount}, ${cr.email})`;
             sql:ExecutionResult result = check mysqlDb->execute(query);
+            return cr;
         }
+        return credit;
     } else {
         mongodb:Collection creditCol = check Db->getCollection(creditCollection);
         stream<Credit, error?> findResult = check creditCol->find({email});
@@ -102,9 +108,8 @@ isolated function getCredit(mongodb:Database Db, string email) returns Credit|er
             check creditCol->insertOne(cr);
             return cr;
         }
+        return result[0];
     }
-
-    return cr;
 }
 
 isolated function addSlotMachineRecord(mongodb:Database Db, string email, int amount, string date) returns SlotMachineRecord|error {
