@@ -1,0 +1,26 @@
+CREATE TABLE Credits (
+    id int NOT NULL AUTO_INCREMENT,
+    amount INT NOT NULL,
+    email varchar(255),
+    PRIMARY KEY (id)
+);
+
+
+CREATE TABLE Lottery (
+    id int NOT NULL AUTO_INCREMENT,
+    bet_value varchar(255) NOT NULL,
+    email varchar(255),
+    last_draw_bet_value varchar(255),
+    last_draw_value varchar(255),
+    enabled boolean,
+    winner boolean DEFAULT false,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE SlotMachineRecords (
+    id int NOT NULL AUTO_INCREMENT,
+    amount INT NOT NULL,
+    date varchar(255),
+    email varchar(255),
+    PRIMARY KEY (id)
+);

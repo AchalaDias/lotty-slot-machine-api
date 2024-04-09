@@ -1,7 +1,11 @@
 import ballerina/http;
+// import ballerina/io;
 import ballerina/oauth2;
+import ballerina/sql;
 import ballerina/uuid;
 import ballerinax/mongodb;
+import ballerinax/mysql;
+import ballerinax/mysql.driver as _;
 
 configurable string host = ?;
 configurable string database = ?;
@@ -9,6 +13,13 @@ configurable string resultHost = ?;
 configurable string tokenUrl = ?;
 configurable string clientId = ?;
 configurable string clientSecret = ?;
+
+configurable string mysqlHost = ?;
+configurable string mysqlUser = ?;
+configurable string mysqlPassword = ?;
+configurable int mysqlPort = ?;
+
+configurable string dbType = ?;
 
 const string creditCollection = "credits";
 const string slotMachineRecordsCollection = "slot_machine_records";
@@ -60,25 +71,53 @@ service / on new http:Listener(9090) {
 }
 
 isolated function getCredit(mongodb:Database Db, string email) returns Credit|error {
-    mongodb:Collection creditCol = check Db->getCollection(creditCollection);
-    stream<Credit, error?> findResult = check creditCol->find({email});
-    Credit[] result = check from Credit m in findResult
-        select m;
-    if result.length() == 0 {
-        string id = uuid:createType1AsString();
-        Credit cr = {id: id, amount: 100, email: email};
-        check creditCol->insertOne(cr);
-        return cr;
+    string id = uuid:createType1AsString();
+    Credit cr = {id: id, amount: 100, email: email};
+
+    if dbType == "mysql" {
+        mysql:Client mysqlDb = check getMysqlConnection();
+        Credit|sql:Error credit = mysqlDb->queryRow(
+        `SELECT * FROM Credits WHERE email = ${email}`);
+
+        if credit is sql:NoRowsError {
+            sql:ParameterizedQuery query = `INSERT INTO Credits(amount, email)
+                                  VALUES (${cr.amount}, ${cr.email})`;
+            sql:ExecutionResult result = check mysqlDb->execute(query);
+        }
+    } else {
+        mongodb:Collection creditCol = check Db->getCollection(creditCollection);
+        stream<Credit, error?> findResult = check creditCol->find({email});
+        Credit[] result = check from Credit m in findResult
+            select m;
+        if result.length() == 0 {
+            check creditCol->insertOne(cr);
+            return cr;
+        }
     }
-    return result[0];
+
+    return cr;
 }
 
 isolated function addSlotMachineRecord(mongodb:Database Db, string email, int amount, string date) returns SlotMachineRecord|error {
-    mongodb:Collection smCol = check Db->getCollection(slotMachineRecordsCollection);
     string id = uuid:createType1AsString();
     SlotMachineRecord sm = {id: id, amount: amount, email: email, date: date};
-    check smCol->insertOne(sm);
+    if dbType == "mysql" {
+        mysql:Client mysqlDb = check getMysqlConnection();
+        sql:ParameterizedQuery query = `INSERT INTO SlotMachineRecords(amount, date, email)
+                                  VALUES (${sm.amount}, ${sm.date},${sm.email})`;
+        sql:ExecutionResult|sql:Error result = mysqlDb->execute(query);
+    } else {
+        mongodb:Collection smCol = check Db->getCollection(slotMachineRecordsCollection);
+        check smCol->insertOne(sm);
+    }
     return sm;
+}
+
+isolated function getMysqlConnection() returns mysql:Client|sql:Error {
+    final mysql:Client|sql:Error dbClient = new (
+        host = mysqlHost, user = mysqlUser, password = mysqlPassword, port = mysqlPort, database = database
+    );
+    return dbClient;
 }
 
 public type CreditInput record {|
