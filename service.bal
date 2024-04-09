@@ -1,6 +1,4 @@
 import ballerina/http;
-import ballerina/io;
-// import ballerina/io;
 import ballerina/oauth2;
 import ballerina/sql;
 import ballerina/uuid;
@@ -58,19 +56,18 @@ service / on new http:Listener(9090) {
     resource function put credits/[string email](CreditUpdate update) returns Credit|error {
         mongodb:Collection creditCol = check self.Db->getCollection(creditCollection);
         Credit currentCredit = check getCredit(self.Db, email);
-        io:println(currentCredit);
+
         int balance = currentCredit.amount + update.deduction;
         if balance <= 0 {
             balance = 0;
         }
-        io:println(balance);
         if dbType == "mysql" {
             mysql:Client mysqlDb = check getMysqlConnection();
             sql:ParameterizedQuery query = `UPDATE Credits
                                         SET amount = ${balance}
                                         WHERE email = ${email}`;
             sql:ExecutionResult result = check mysqlDb->execute(query);
-            io:println(result.affectedRowCount);
+
         } else {
             mongodb:UpdateResult updateResult = check creditCol->updateOne({email}, {set: {amount: balance}});
             if updateResult.modifiedCount != 1 {
