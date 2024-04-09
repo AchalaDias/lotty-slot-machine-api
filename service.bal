@@ -61,9 +61,18 @@ service / on new http:Listener(9090) {
         if balance <= 0 {
             balance = 0;
         }
-        mongodb:UpdateResult updateResult = check creditCol->updateOne({email}, {set: {amount: balance}});
-        if updateResult.modifiedCount != 1 {
-            return error(string `Failed to update the credits with email ${email}`);
+
+        if dbType == "mysql" {
+            mysql:Client mysqlDb = check getMysqlConnection();
+            sql:ParameterizedQuery query = `UPDATE Credits
+                                        SET amount = ${balance}
+                                        WHERE email = ${email};`;
+            sql:ExecutionResult result = check mysqlDb->execute(query);
+        } else {
+            mongodb:UpdateResult updateResult = check creditCol->updateOne({email}, {set: {amount: balance}});
+            if updateResult.modifiedCount != 1 {
+                return error(string `Failed to update the credits with email ${email}`);
+            }
         }
         SlotMachineRecord sm = check addSlotMachineRecord(self.Db, email, update.deduction, update.date);
         return getCredit(self.Db, email);
