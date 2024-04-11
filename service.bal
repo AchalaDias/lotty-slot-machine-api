@@ -52,7 +52,7 @@ service / on new http:Listener(9090) {
         http:Client apiClient = check new (resultHost);
         http:Response response = check apiClient->get("/slotmachineresults/" + email, {"Authorization": token});
 
-        log:printError("&&&&&&&&&& 1 " + response.statusCode.toString());
+        log:printError("&&&&&&&&&& 1 " + check response.getTextPayload());
         log:printError("&&&&&&&&&& 2 " + response.resolvedRequestedURI.toString());
         log:printError("################################################");
         return response.getJsonPayload();
