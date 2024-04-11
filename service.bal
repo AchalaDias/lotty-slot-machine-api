@@ -1,4 +1,5 @@
 import ballerina/http;
+import ballerina/log;
 import ballerina/oauth2;
 import ballerina/sql;
 import ballerina/uuid;
@@ -44,9 +45,17 @@ service / on new http:Listener(9090) {
             scopes: []
         });
         string token = "Bearer " + check provider.generateToken();
+        log:printDebug("################################################");
+        log:printDebug(token.toString());
+        log:printDebug(resultHost);
+
         http:Client apiClient = check new (resultHost);
         http:Response response = check apiClient->get("/slotmachineresults/" + email, {"Authorization": token});
+
+        log:printDebug(response.statusCode.toString());
+        log:printDebug("################################################");
         return response.getJsonPayload();
+
     }
 
     resource function get credits/[string email]() returns Credit|error {
