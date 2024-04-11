@@ -45,15 +45,15 @@ service / on new http:Listener(9090) {
             scopes: []
         });
         string token = "Bearer " + check provider.generateToken();
-        log:printDebug("################################################");
-        log:printDebug(token.toString());
-        log:printDebug(resultHost);
+        log:printError("################################################");
+        log:printError(token.toString());
+        log:printError(resultHost);
 
         http:Client apiClient = check new (resultHost);
         http:Response response = check apiClient->get("/slotmachineresults/" + email, {"Authorization": token});
 
-        log:printDebug(response.statusCode.toString());
-        log:printDebug("################################################");
+        log:printError(response.statusCode.toString());
+        log:printError("################################################");
         return response.getJsonPayload();
 
     }
